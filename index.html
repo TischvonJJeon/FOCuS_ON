@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <title>FOCuS-On</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic+Coding:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #a39c8e; 
+            --container-bg: #000000;
+            --panel-bg: #555555;
+            --text-main: #ffffff;
+            --text-muted: #cccccc;
+            /* 메인 작업 영역용 폰트 */
+            --font-main: 'Nanum Gothic Coding', monospace;
+            /* 타이틀 및 서명용 기본 고정폭 폰트 */
+            --font-system: 'Courier New', Courier, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: var(--font-family);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: var(--text-main);
+        }
+
+        .outer-frame {
+            width: 95vw;
+            height: 90vh;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-label {
+            font-family: var(--font-system);
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            color: #333;
+        }
+
+        .main-container {
+            flex: 1;
+            background-color: var(--container-bg);
+            border-radius: 25px;
+            padding: 25px;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            grid-template-rows: 70px 1fr 70px;
+            gap: 20px;
+            border: 4px solid #222;
+            position: relative;
+        }
+
+        /* 메인 패널 내부에만 아주 미세한 입자감 부여 */
+        .main-container::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: url('https://www.transparenttextures.com/patterns/stardust.png');
+            opacity: 0.03;
+            pointer-events: none;
+            border-radius: 20px;
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 15px;
+            padding: 15px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-family: var(--font-family);
+            font-size: 16px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            padding: 5px;
+        }
+
+        .label-overlay {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            opacity: 0.7;
+        }
+
+        /* 좌측 영역 */
+        .main-writing { grid-row: 1 / 4; }
+
+        /* 우측 상단 상태바 (이전 모양 유지 + 가운데 정렬) */
+        .status-box {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            padding: 0; /* 패딩 제거하여 정렬 최적화 */
+        }
+
+        .status-item {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            height: 100%;
+        }
+
+        .status-divider {
+            width: 2px;
+            height: 40%;
+            background-color: #ffffff; /* 하얀 막대 */
+        }
+
+        /* 우측 하단 버튼 */
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        button {
+            background-color: var(--panel-bg);
+            border: none;
+            border-radius: 15px;
+            color: var(--text-main);
+            font-family: var(--font-family);
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover { background-color: #666; }
+        button:active { transform: translateY(1px); }
+
+        .timer-controls {
+            display: flex;
+            gap: 5px;
+            margin-left: 10px;
+        }
+
+        .btn-small {
+            font-size: 12px !important;
+            padding: 2px 8px !important;
+            border-radius: 5px !important;
+            width: auto !important;
+        }
+
+        /* 하단 정보 */
+        .footer-info {
+            font-family: var(--font-system);
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #444;
+            font-weight: bold;
+        }
+
+        #save-status {
+            position: absolute;
+            bottom: 35px;
+            left: 40px;
+            font-size: 10px;
+            color: #777;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="outer-frame">
+        <div class="header-label">FOCuS-ON</div>
+
+        <div class="main-container">
+            <div class="panel main-writing">
+                <div class="label-overlay">(Main Memopad)</div>
+                <textarea id="main-content" placeholder="이곳에 집중하여 글을 작성하세요..."></textarea>
+            </div>
+
+            <div class="panel status-box">
+                <div id="current-date-time" class="status-item">YYYY.MM.DD HH:MM:SS</div>
+                <div class="status-divider"></div>
+                <div class="status-item">
+                    <span id="work-timer">00:00:00</span>
+                    <div class="timer-controls">
+                        <button onclick="toggleTimer()" id="pause-btn" class="btn-small">ll</button>
+                        <button onclick="resetTimer()" class="btn-small">↺</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel sub-memo">
+                <div class="label-overlay">(Sub Memopad)</div>
+                <textarea id="sub-content" placeholder="참고 사항을 기록하세요..."></textarea>
+            </div>
+
+            <div class="button-group">
+                <button onclick="copyToClipboard()">복 사</button>
+                <button onclick="endSession()">세션 종료</button>
+            </div>
+
+            <div id="save-status">Saved.</div>
+        </div>
+
+        <div class="footer-info">
+            <div class="signature">by JJeon</div>
+            <div class="since-date">2026.05.11</div>
+        </div>
+    </div>
+
+    <script>
+        const mainEl = document.getElementById('main-content');
+        const subEl = document.getElementById('sub-content');
+        const clockEl = document.getElementById('current-date-time');
+        const timerEl = document.getElementById('work-timer');
+        const saveStatusEl = document.getElementById('save-status');
+
+        let elapsedTime = parseInt(localStorage.getItem('focus_elapsedTime')) || 0;
+        let startTimeRaw = localStorage.getItem('focus_startTime');
+        let startTime = (startTimeRaw === null) ? Date.now() : (startTimeRaw === "" ? null : parseInt(startTimeRaw));
+        
+        function init() {
+            mainEl.value = localStorage.getItem('focus_main') || '';
+            subEl.value = localStorage.getItem('focus_sub') || '';
+            
+            document.getElementById('pause-btn').textContent = startTime ? 'll' : '▶';
+            
+            if (startTimeRaw === null) {
+                localStorage.setItem('focus_startTime', startTime);
+            }
+
+            setInterval(updateClock, 1000);
+            setInterval(updateTimer, 1000);
+            updateClock();
+            updateTimer();
+
+            mainEl.addEventListener('input', autoSave);
+            subEl.addEventListener('input', autoSave);
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const ss = String(now.getSeconds()).padStart(2, '0');
+            clockEl.textContent = `${y}.${m}.${d} ${hh}:${mm}:${ss}`;
+        }
+
+        function updateTimer() {
+            let totalMs = elapsedTime;
+            if (startTime) {
+                totalMs += (Date.now() - startTime);
+            }
+            const diff = Math.floor(totalMs / 1000);
+            const h = Math.floor(diff / 3600);
+            const m = Math.floor((diff % 3600) / 60);
+            const s = diff % 60;
+            timerEl.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function toggleTimer() {
+            const pauseBtn = document.getElementById('pause-btn');
+            if (startTime) {
+                elapsedTime += (Date.now() - startTime);
+                startTime = null;
+                pauseBtn.textContent = '▶';
+            } else {
+                startTime = Date.now();
+                pauseBtn.textContent = 'll';
+            }
+            localStorage.setItem('focus_elapsedTime', elapsedTime);
+            localStorage.setItem('focus_startTime', startTime || '');
+        }
+
+        function resetTimer() {
+            if (confirm('타이머를 초기화하시겠습니까?')) {
+                elapsedTime = 0;
+                startTime = startTime ? Date.now() : null;
+                localStorage.setItem('focus_elapsedTime', 0);
+                localStorage.setItem('focus_startTime', startTime || '');
+                updateTimer();
+            }
+        }
+
+        function autoSave() {
+            localStorage.setItem('focus_main', mainEl.value);
+            localStorage.setItem('focus_sub', subEl.value);
+            saveStatusEl.style.opacity = '1';
+            setTimeout(() => { saveStatusEl.style.opacity = '0'; }, 1000);
+        }
+
+        function copyToClipboard() {
+            const textToCopy = `[메인 글]\n${mainEl.value}\n\n[보조 메모]\n${subEl.value}`;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert('내용이 클립보드에 복사되었습니다.');
+            });
+        }
+
+        function endSession() {
+            if (confirm('세션을 종료하시겠습니까? 현재까지의 작업물이 TXT 파일로 저장되고 모든 기록이 초기화됩니다.')) {
+                const now = new Date().toISOString().split('T')[0];
+                const time = timerEl.textContent;
+                const finalDoc = `${now} / 작업 시간: ${time}\n\n[메인 글]\n${mainEl.value}\n\n[보조 메모]\n${subEl.value}`;
+                
+                // 파일 다운로드 로직
+                const element = document.createElement('a');
+                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(finalDoc));
+                element.setAttribute('download', `worklog_${now}.txt`);
+                element.style.display = 'none';
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+
+                // 데이터 초기화
+                localStorage.removeItem('focus_main');
+                localStorage.removeItem('focus_sub');
+                localStorage.removeItem('focus_startTime');
+                localStorage.removeItem('focus_elapsedTime');
+                location.reload();
+            }
+        }
+
+        // 우클릭 방지
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        init();
+    </script>
+</body>
+</html>
